@@ -1,33 +1,54 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, Image, Button, StyleSheet } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { likePost } from '../redux/slices/likeSlice';
-import { fetchPosts } from '../redux/slices/postSlice';
+import { fetchPosts, updatePost } from '../redux/slices/postSlice';
 
 const PostCard = ({ post, onComment }) => {
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.like);
+  const posts = useSelector((state) => state.post.posts);
+  const currentPost = posts.find((p) => p.id === post.id) || post;
 
   const handleLike = async () => {
     try {
-      console.log('Лайк дарж байна, post.id:', post.id); // post.id-г шалгана
       const result = await dispatch(likePost(post.id)).unwrap();
-      if (result) {
+      if (result && result.post) {
+        dispatch(updatePost(result.post));
         dispatch(fetchPosts());
-        console.log('Лайк амжилттай:', result);
       }
     } catch (err) {
       console.log('Лайк амжилтгүй:', err);
     }
   };
 
-  const likesCount = post.likes ? post.likes.length : 0;
+  const likesCount = currentPost.likes ? currentPost.likes.length : 0;
+  const comments = currentPost.comments || [];
+
+  useEffect(() => {
+    console.log('Current post:', currentPost);
+    console.log('Comments:', comments);
+  }, [currentPost]);
 
   return (
     <View style={styles.card}>
-      <Text>{post.description}</Text>
-      {post.image && <Image source={{ uri: post.image }} style={styles.image} />}
+      <Text>{currentPost.description}</Text>
+      {currentPost.image && <Image source={{ uri: currentPost.image }} style={styles.image} />}
       <Text>Лайк: {likesCount}</Text>
+      
+      <View style={styles.commentsContainer}>
+        <Text style={styles.commentsTitle}>Сэтгэгдэл ({comments.length}):</Text>
+        {comments.length > 0 ? (
+          comments.map((comment) => (
+            <Text key={comment.id} style={styles.comment}>
+              {comment.content} - {comment.authorId}
+            </Text>
+          ))
+        ) : (
+          <Text style={styles.noComments}>Сэтгэгдэл байхгүй</Text>
+        )}
+      </View>
+
       <Button title="Лайк" onPress={handleLike} disabled={loading} />
       <Button title="Коммент" onPress={onComment} />
       {loading && <Text style={styles.status}>Лайк ачаалж байна...</Text>}
@@ -41,6 +62,10 @@ const styles = StyleSheet.create({
   image: { width: 200, height: 200 },
   status: { color: 'blue', marginTop: 5 },
   error: { color: 'red', marginTop: 5 },
+  commentsContainer: { marginTop: 10 },
+  commentsTitle: { fontWeight: 'bold', marginBottom: 5 },
+  comment: { fontSize: 14, color: '#333', marginBottom: 5 },
+  noComments: { fontSize: 14, color: '#666', fontStyle: 'italic' },
 });
 
 export default PostCard;

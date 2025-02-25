@@ -17,11 +17,16 @@ const CommentScreen = ({ route, navigation }) => {
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.comment);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (content.trim() === '') return;
-    dispatch(createComment({ content, postId, authorId: 'your-user-id' }));
-    setContent('');
-    navigation.navigate('PostList'); // Амжилттай бол буцна
+    try {
+      const commentData = { content, postId };
+      await dispatch(createComment(commentData)).unwrap();
+      setContent('');
+      navigation.goBack(); // PostList руу буцна
+    } catch (err) {
+      console.log('Коммент амжилтгүй:', err);
+    }
   };
 
   return (
@@ -34,7 +39,7 @@ const CommentScreen = ({ route, navigation }) => {
       />
       <Button title="Сэтгэгдэл нэмэх" onPress={handleSubmit} disabled={loading} color="#6200ea" />
       {error && <Text style={styles.error}>Алдаа: {error}</Text>}
-      <Button title="Постын жагсаалт руу буцах" onPress={() => navigation.navigate('PostList')} />
+      <Button title="Буцах" onPress={() => navigation.goBack()} />
     </View>
   );
 };

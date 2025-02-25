@@ -52,7 +52,7 @@ const CreatePostScreen = ({ navigation }) => {
       {image && <Image source={{ uri: image }} style={styles.image} />}
       <Button title="Пост оруулах" onPress={handleSubmit} disabled={loading} />
       {loading && <ActivityIndicator />}
-      {error && <Text style={styles.error}>Алдаа: {error}</Text>}
+      {error && <Text style={styles.error}></Text>}
       <Button title="Постын жагсаалт руу буцах" onPress={() => navigation.navigate('PostList')} />
     </View>
   );
