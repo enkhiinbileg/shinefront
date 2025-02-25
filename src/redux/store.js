@@ -6,6 +6,7 @@ import categoryReducer from './slices/categorySlice';
 import postReducer from './slices/postSlice';
 import commentReducer from './slices/commentSlice';
 import likeReducer from './slices/likeSlice';
+import profileReducer from './slices/profileSlice';
 
 export const store = configureStore({
   reducer: {
@@ -15,7 +16,8 @@ export const store = configureStore({
     category: categoryReducer,
     post: postReducer,
     comment: commentReducer,
-    like: likeReducer,
+    likes: likeReducer,
+    profile: profileReducer
   },
 });
 
