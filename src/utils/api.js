@@ -103,7 +103,14 @@ export const fetchUserProfile = async (userId) =>{
     headers: { Authorization: `Bearer ${token}` },
   });
 }
-export const fetchProducts = () => api.get('/products');
+export const fetchProducts = async () =>{
+  const token = await getToken();
+  console.log('Гараар шалгаж байна, токен:', token);
+  return api.get('/products', {
+    headers: { Authorization: `Bearer ${token}` },
+
+  })
+}
 export const createProduct = (productData) => api.post('/products', productData);
 export const fetchCategories = () => api.get('/categories');
 export const fetchPosts = () => api.get('/posts');
