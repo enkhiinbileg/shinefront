@@ -1,36 +1,41 @@
-import React from 'react';
-import { View, Text, Image, Button, StyleSheet } from 'react-native';
+import React, { useCallback, useRef } from 'react';
+import { View, Text, Image, Button, StyleSheet, Alert } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { likePost } from '../redux/slices/likeSlice';
 import { fetchPosts } from '../redux/slices/postSlice';
 
-const PostCard = ({ post, onComment }) => {
+const PostCard = ({ post, onComment, onPress }) => {
   const dispatch = useDispatch();
-  const { loading, error } = useSelector((state) => state.like);
+  const { loading, error } = useSelector((state) => state.likes); // 'like'-ийн оронд 'likes'
+  const lastTap = useRef(null);
+  const isLiked = post.isLiked; // Постын өгөгдлөөс ирж байна гэж таамаглаж байна
 
   const handleLike = async () => {
     try {
-      console.log('Лайк дарж байна, post.id:', post.id); // post.id-г шалгана
+      console.log('Лайк дарж байна, post.id:', post.id);
       const result = await dispatch(likePost(post.id)).unwrap();
       if (result) {
-        dispatch(fetchPosts());
+        dispatch(fetchPosts()); // Постыг шинэчлэх
       }
     } catch (err) {
       Alert.alert('Алдаа', err.message || 'Лайк хийхэд алдаа гарлаа');
     }
-  }, [dispatch, currentPost?.id, loading, user]);
+  };
 
-  const handlePress = useCallback((event) => {
-    const now = Date.now();
-    const DOUBLE_PRESS_DELAY = 300;
-    if (lastTap.current && (now - lastTap.current) < DOUBLE_PRESS_DELAY) {
-      if (!isLiked) handleLike();
-      lastTap.current = 0;
-    } else {
-      lastTap.current = now;
-      onPress?.(event);
-    }
-  }, [handleLike, onPress, isLiked]);
+  const handlePress = useCallback(
+    (event) => {
+      const now = Date.now();
+      const DOUBLE_PRESS_DELAY = 300;
+      if (lastTap.current && now - lastTap.current < DOUBLE_PRESS_DELAY) {
+        if (!isLiked) handleLike();
+        lastTap.current = null;
+      } else {
+        lastTap.current = now;
+        onPress?.(event);
+      }
+    },
+    [handleLike, onPress, isLiked]
+  );
 
   const likesCount = post.likes ? post.likes.length : 0;
 

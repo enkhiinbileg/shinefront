@@ -1,36 +1,35 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import { createPost as apiCreatePost, fetchPosts as apiFetchPosts } from '../../utils/api'; // api.js-ээс импортлож байна
 
 export const fetchPosts = createAsyncThunk('post/fetchPosts', async () => {
-  const response = await axios.get('http://http://192.168.88.230:5000/api/posts');
+  const response = await apiFetchPosts();
   return response.data;
 });
 
 export const createPost = createAsyncThunk(
   'post/createPost',
-  async (postData, { getState }) => {
-    const token = getState().auth.token;
-    const formData = new FormData();
-    formData.append('description', postData.description);
-    formData.append('authorId', postData.authorId);
-    if (postData.image) {
-      formData.append('image', {
-        uri: postData.image,
-        type: 'image/jpeg',
-        name: 'post-image.jpg',
+  async (postData, { rejectWithValue }) => {
+    try {
+      const { description, images, location, category, token } = postData;
+      const formData = new FormData();
+      formData.append('description', description);
+      formData.append('location', location || '');
+      formData.append('category', category || '');
+
+      // Олон зураг нэмэх
+      images.forEach((imageUri, index) => {
+        formData.append('images', {
+          uri: imageUri,
+          type: 'image/jpeg',
+          name: `post-image-${index}.jpg`,
+        });
       });
+
+      const response = await apiCreatePost(formData); // api.js-ийн createPost-г ашиглана
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message);
     }
-    const response = await axios.post(
-      'http://192.168.88.201:5000/api/posts',
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`,
-        },
-      }
-    );
-    return response.data;
   }
 );
 
@@ -48,27 +47,27 @@ const postSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(fetchPosts.pending, (state) => {
+        state.loading = true;
+      })
       .addCase(fetchPosts.fulfilled, (state, action) => {
         state.posts = action.payload;
         state.loading = false;
-      })
-      .addCase(fetchPosts.pending, (state) => {
-        state.loading = true;
       })
       .addCase(fetchPosts.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message;
       })
+      .addCase(createPost.pending, (state) => {
+        state.loading = true;
+      })
       .addCase(createPost.fulfilled, (state, action) => {
         state.posts.push(action.payload);
         state.loading = false;
       })
-      .addCase(createPost.pending, (state) => {
-        state.loading = true;
-      })
       .addCase(createPost.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message;
+        state.error = action.payload || 'Пост оруулахад алдаа гарлаа';
       });
   },
 });

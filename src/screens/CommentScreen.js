@@ -10,7 +10,8 @@ import {
   Image,
   ActivityIndicator,
   SafeAreaView,
-  StatusBar
+  StatusBar,
+  Button
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { createComment } from '../redux/slices/commentSlice';

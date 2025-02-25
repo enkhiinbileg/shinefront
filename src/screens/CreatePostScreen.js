@@ -8,12 +8,12 @@ import {
   ActivityIndicator,
   StyleSheet,
   ScrollView,
-  Keyboard,
-  Alert
+  Alert,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import * as ImagePicker from 'expo-image-picker';
 import { createPost, fetchPosts } from '../redux/slices/postSlice';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BlurView } from 'expo-blur';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -26,7 +26,7 @@ const CreatePostScreen = ({ navigation }) => {
   const [location, setLocation] = useState('');
   const [category, setCategory] = useState('');
   const dispatch = useDispatch();
-  const { loading } = useSelector((state) => state.post);
+  const { loading, error } = useSelector((state) => state.post);
   const insets = useSafeAreaInsets();
   const inputRef = useRef(null);
 
@@ -48,8 +48,8 @@ const CreatePostScreen = ({ navigation }) => {
       });
 
       if (!result.canceled) {
-        const newImages = result.assets.map(asset => asset.uri);
-        setImages(prev => [...prev, ...newImages].slice(0, 5)); // Максимум 5 зураг
+        const newImages = result.assets.map((asset) => asset.uri);
+        setImages((prev) => [...prev, ...newImages].slice(0, 5));
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     } catch (error) {
@@ -59,10 +59,16 @@ const CreatePostScreen = ({ navigation }) => {
 
   const removeImage = (index) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setImages(prev => prev.filter((_, i) => i !== index));
+    setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async () => {
+    const token = await AsyncStorage.getItem('token');
+    if (!token) {
+      Alert.alert('Анхааруулга', 'Та эхлээд нэвтрэх ёстой.');
+      return;
+    }
+
     if (!description.trim() || images.length === 0) {
       Alert.alert('Анхааруулга', 'Тодорхойлолт болон дор хаяж нэг зураг оруулна уу.');
       return;
@@ -70,14 +76,21 @@ const CreatePostScreen = ({ navigation }) => {
 
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      await dispatch(createPost({ 
-        description, 
-        images, 
-        location,
-        category 
-      })).unwrap();
-      
+      await dispatch(
+        createPost({
+          description,
+          images,
+          location,
+          category,
+          token,
+        })
+      ).unwrap();
+
       dispatch(fetchPosts());
+      setDescription('');
+      setImages([]);
+      setLocation('');
+      setCategory('');
       navigation.navigate('PostList');
     } catch (error) {
       Alert.alert('Алдаа', error.message || 'Пост оруулахад алдаа гарлаа.');
@@ -85,23 +98,101 @@ const CreatePostScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="Тодорхойлолт оруулна уу"
-        value={description}
-        onChangeText={setDescription}
-      />
-      <Button title="Зураг сонгох" onPress={pickImage} />
-      {image && <Image source={{ uri: image }} style={styles.image} />}
-      <Button title="Пост оруулах" onPress={handleSubmit} disabled={loading} />
-      {loading && <ActivityIndicator />}
-      {error && <Text style={styles.error}>Алдаа: {error}</Text>}
-      <Button title="Постын жагсаалт руу буцах" onPress={() => navigation.navigate('PostList')} />
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <BlurView intensity={90} style={styles.header}>
+        <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
+          <Ionicons name="close" size={24} color="#333" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Шинэ пост</Text>
+        <TouchableOpacity
+          style={[
+            styles.submitButton,
+            (!description.trim() || images.length === 0) && styles.submitButtonDisabled,
+          ]}
+          onPress={handleSubmit}
+          disabled={loading || !description.trim() || images.length === 0}
+        >
+          {loading ? (
+            <ActivityIndicator color="#FFF" />
+          ) : (
+            <Text style={styles.submitButtonText}>Нийтлэх</Text>
+          )}
+        </TouchableOpacity>
+      </BlurView>
+
+      <ScrollView
+        style={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <TextInput
+          ref={inputRef}
+          style={styles.input}
+          placeholder="Та энд бичнэ үү..."
+          value={description}
+          onChangeText={setDescription}
+          multiline
+          maxLength={2000}
+          autoFocus
+        />
+
+        <View style={styles.locationContainer}>
+          <Ionicons name="location-outline" size={20} color="#666" />
+          <TextInput
+            style={styles.locationInput}
+            placeholder="Байршил нэмэх"
+            value={location}
+            onChangeText={setLocation}
+          />
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoryContainer}
+        >
+          {categories.map((cat) => (
+            <TouchableOpacity
+              key={cat}
+              style={[styles.categoryButton, category === cat && styles.categoryButtonActive]}
+              onPress={() => {
+                setCategory(cat);
+                Haptics.selectionAsync();
+              }}
+            >
+              <Text style={[styles.categoryText, category === cat && styles.categoryTextActive]}>
+                {cat}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        <View style={styles.imageGrid}>
+          {images.map((uri, index) => (
+            <View key={index} style={styles.imageContainer}>
+              <Image source={{ uri }} style={styles.imagePreview} />
+              <TouchableOpacity style={styles.removeImageButton} onPress={() => removeImage(index)}>
+                <MaterialIcons name="cancel" size={20} color="#FFF" />
+              </TouchableOpacity>
+            </View>
+          ))}
+          {images.length < 5 && (
+            <TouchableOpacity style={styles.addImageButton} onPress={pickImages}>
+              <LinearGradient colors={['#5C6BC0', '#3949AB']} style={styles.addImageGradient}>
+                <Ionicons name="camera" size={24} color="#FFF" />
+                <Text style={styles.addImageText}>Зураг нэмэх</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
+        </View>
+      </ScrollView>
+
+      {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 };
 
+// Styles remain unchanged
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -227,6 +318,11 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 12,
     marginTop: 4,
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    padding: 10,
   },
 });
 

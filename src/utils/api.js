@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = 'http://192.168.88.230:5000/api';
+const BASE_URL = 'http://192.168.88.201:5000/api';
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -21,24 +21,24 @@ const getToken = async () => {
 };
 
 const setupInterceptors = (instance) => {
-    instance.interceptors.request.use(
-      async (config) => {
-        const token = await getToken();
-        console.log('Хүсэлтийн өмнөх токен:', token);
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-          console.log('Header-д нэмэгдсэн Authorization:', config.headers.Authorization);
-        } else {
-          console.warn('Токен олдсонгүй');
-        }
-        return config;
-      },
-      (error) => {
-        console.error('Интерцепторын хүсэлтийн алдаа:', error);
-        return Promise.reject(error);
+  instance.interceptors.request.use(
+    async (config) => {
+      const token = await getToken();
+      console.log('Хүсэлтийн өмнөх токен:', token);
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+        console.log('Header-д нэмэгдсэн Authorization:', config.headers.Authorization);
+      } else {
+        console.warn('Токен олдсонгүй');
       }
-    );
-  };
+      return config;
+    },
+    (error) => {
+      console.error('Интерцепторын хүсэлтийн алдаа:', error);
+      return Promise.reject(error);
+    }
+  );
+};
 
 setupInterceptors(api);
 
@@ -58,7 +58,6 @@ export const loginUser = async (credentials) => {
       await AsyncStorage.setItem('token', token);
       console.log('Токеныг амжилттай хадгаллаа:', token);
       api.defaults.headers.Authorization = `Bearer ${token}`;
-
     } else {
       console.warn('Хариултад токен алга:', response.data);
     }
@@ -96,54 +95,67 @@ export const registerUser = async (userData) => {
   }
 };
 
-export const fetchUserProfile = async (userId) =>{
+export const fetchUserProfile = async (userId) => {
   const token = await getToken();
   console.log('Гараар шалгаж байна, токен:', token);
   return api.get(`/users/${userId}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-}
-export const fetchProducts = async () =>{
+};
+
+export const fetchProducts = async () => {
   const token = await getToken();
   console.log('Гараар шалгаж байна, токен:', token);
   return api.get('/products', {
     headers: { Authorization: `Bearer ${token}` },
+  });
+};
 
-  })
-}
 export const createProduct = (productData) => api.post('/products', productData);
+
 export const fetchCategories = () => api.get('/categories');
+
 export const fetchPosts = () => api.get('/posts');
 
 export const createPost = (postData) => {
   const formData = new FormData();
-  formData.append('title', postData.title);
-  formData.append('content', postData.content);
-  formData.append('authorId', postData.authorId);
-  if (postData.image) {
-    formData.append('image', {
-      uri: postData.image,
-      type: 'image/jpeg',
-      name: 'post-image.jpg',
+  formData.append('description', postData.description || ''); // CreatePostScreen-тай тааруулав
+  formData.append('location', postData.location || '');
+  formData.append('category', postData.category || '');
+
+  // Олон зураг нэмэх
+  if (postData.images && postData.images.length > 0) {
+    postData.images.forEach((imageUri, index) => {
+      formData.append('images', {
+        uri: imageUri,
+        type: 'image/jpeg',
+        name: `post-image-${index}.jpg`,
+      });
     });
   }
+
   console.log('Пост илгээж байна...', formData);
-  return api.post('/posts', formData);
+  return api.post('/posts', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data', // Зөв header тохируулах
+    },
+  });
 };
 
-export const createComment =async (commentData) =>{
+export const createComment = async (commentData) => {
   const token = await getToken();
   console.log('Гараар шалгаж байна, токен:', token);
   return api.post('/comments', commentData, {
     headers: { Authorization: `Bearer ${token}` },
   });
-}
+};
+
 export const likePost = async (likeData) => {
-    const token = await getToken();
-    console.log('Гараар шалгаж байна, токен:', token);
-    return api.post('/likes', likeData, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-  }
+  const token = await getToken();
+  console.log('Гараар шалгаж байна, токен:', token);
+  return api.post('/likes', likeData, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
 
 export default api;
