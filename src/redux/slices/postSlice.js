@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // Постуудыг татах
 export const fetchPosts = createAsyncThunk('post/fetchPosts', async () => {
-  const response = await axios.get('http://192.168.88.201:5000/api/posts');
+  const response = await axios.get('http://http://192.168.88.230:5000/api/posts');
   return response.data;
 });
 

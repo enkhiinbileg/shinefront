@@ -2,12 +2,12 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 export const fetchProducts = createAsyncThunk('product/fetchProducts', async () => {
-  const response = await axios.get('http://192.168.88.201:5000/api/products');
+  const response = await axios.get('http://192.168.88.230:5000/api/products');
   return response.data;
 });
 
 export const createProduct = createAsyncThunk('product/createProduct', async (productData) => {
-  const response = await axios.post('http://192.168.88.201:5000/api/products', productData);
+  const response = await axios.post('http://192.168.88.230:5000/api/products', productData);
   return response.data;
 });
 

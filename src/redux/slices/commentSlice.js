@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 export const createComment = createAsyncThunk('comment/createComment', async (commentData) => {
-  const response = await axios.post('http://192.168.88.201:5000/api/comments', commentData);
+  const response = await axios.post('http://http://192.168.88.230:5000/api/comments', commentData);
   return response.data;
 });
 

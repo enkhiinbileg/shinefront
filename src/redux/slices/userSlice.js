@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 export const fetchUserProfile = createAsyncThunk('user/fetchProfile', async (userId) => {
-  const response = await axios.get(`http://192.168.88.201:5000/api/users/${userId}`);
+  const response = await axios.get(`http://192.168.88.230:5000/api/users/${userId}`);
   return response.data;
 });
 
