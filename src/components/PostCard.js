@@ -1,54 +1,44 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, Text, Image, Button, StyleSheet } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { likePost } from '../redux/slices/likeSlice';
-import { fetchPosts, updatePost } from '../redux/slices/postSlice';
+import { fetchPosts } from '../redux/slices/postSlice';
 
 const PostCard = ({ post, onComment }) => {
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.like);
-  const posts = useSelector((state) => state.post.posts);
-  const currentPost = posts.find((p) => p.id === post.id) || post;
 
   const handleLike = async () => {
     try {
+      console.log('Лайк дарж байна, post.id:', post.id); // post.id-г шалгана
       const result = await dispatch(likePost(post.id)).unwrap();
-      if (result && result.post) {
-        dispatch(updatePost(result.post));
+      if (result) {
         dispatch(fetchPosts());
       }
     } catch (err) {
-      console.log('Лайк амжилтгүй:', err);
+      Alert.alert('Алдаа', err.message || 'Лайк хийхэд алдаа гарлаа');
     }
-  };
+  }, [dispatch, currentPost?.id, loading, user]);
 
-  const likesCount = currentPost.likes ? currentPost.likes.length : 0;
-  const comments = currentPost.comments || [];
+  const handlePress = useCallback((event) => {
+    const now = Date.now();
+    const DOUBLE_PRESS_DELAY = 300;
+    if (lastTap.current && (now - lastTap.current) < DOUBLE_PRESS_DELAY) {
+      if (!isLiked) handleLike();
+      lastTap.current = 0;
+    } else {
+      lastTap.current = now;
+      onPress?.(event);
+    }
+  }, [handleLike, onPress, isLiked]);
 
-  useEffect(() => {
-    console.log('Current post:', currentPost);
-    console.log('Comments:', comments);
-  }, [currentPost]);
+  const likesCount = post.likes ? post.likes.length : 0;
 
   return (
     <View style={styles.card}>
-      <Text>{currentPost.description}</Text>
-      {currentPost.image && <Image source={{ uri: currentPost.image }} style={styles.image} />}
+      <Text>{post.description}</Text>
+      {post.image && <Image source={{ uri: post.image }} style={styles.image} />}
       <Text>Лайк: {likesCount}</Text>
-      
-      <View style={styles.commentsContainer}>
-        <Text style={styles.commentsTitle}>Сэтгэгдэл ({comments.length}):</Text>
-        {comments.length > 0 ? (
-          comments.map((comment) => (
-            <Text key={comment.id} style={styles.comment}>
-              {comment.content} - {comment.authorId}
-            </Text>
-          ))
-        ) : (
-          <Text style={styles.noComments}>Сэтгэгдэл байхгүй</Text>
-        )}
-      </View>
-
       <Button title="Лайк" onPress={handleLike} disabled={loading} />
       <Button title="Коммент" onPress={onComment} />
       {loading && <Text style={styles.status}>Лайк ачаалж байна...</Text>}
@@ -62,10 +52,6 @@ const styles = StyleSheet.create({
   image: { width: 200, height: 200 },
   status: { color: 'blue', marginTop: 5 },
   error: { color: 'red', marginTop: 5 },
-  commentsContainer: { marginTop: 10 },
-  commentsTitle: { fontWeight: 'bold', marginBottom: 5 },
-  comment: { fontSize: 14, color: '#333', marginBottom: 5 },
-  noComments: { fontSize: 14, color: '#666', fontStyle: 'italic' },
 });
 
-export default PostCard;
+export default React.memo(PostCard);

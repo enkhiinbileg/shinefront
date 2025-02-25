@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 export const fetchPosts = createAsyncThunk('post/fetchPosts', async () => {
-  const response = await axios.get('http://http://192.168.88.201:5000/api/posts');
+  const response = await axios.get('http://http://192.168.88.230:5000/api/posts');
   return response.data;
 });
 
@@ -26,7 +26,7 @@ export const createPost = createAsyncThunk(
       {
         headers: {
           'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`,
         },
       }
     );

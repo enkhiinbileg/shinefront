@@ -33,36 +33,24 @@ const SUB_BUTTON_WIDTH = SCREEN_WIDTH * 0.2;
 const cardDataArray = [
   {
     id: 1,
-    title: "Монголын Үзэсгэлэнт Газрууд",
-    description: "Дэлхийд алдартай байгалийн үзэсгэлэнт газруудаар аялах боломж",
+    title: "Аяллын Шилдэг Газрууд",
+    description: "Монголын үзэсгэлэнт газруудаар аялах боломж",
     imageUrl: "https://images.unsplash.com/photo-1513407030348-c983a97b98d8?q=80&w=2072&auto=format&fit=crop",
     info: "200+ байршил",
-    stats: [
-      { icon: "map-marker-alt", text: "200+ байршил" },
-      { icon: "camera", text: "1000+ зураг" }
-    ]
   },
   {
     id: 2,
-    title: "Мэргэжлийн Хөтөч",
-    description: "Туршлагатай хөтөч, орчуулагчид таны аяллыг дурсгалтай болгоно",
+    title: "Аяллын Хөтөч",
+    description: "Мэргэжлийн хөтөч, орчуулагчид",
     imageUrl: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=2074&auto=format&fit=crop",
     info: "50+ хөтөч",
-    stats: [
-      { icon: "users", text: "50+ хөтөч" },
-      { icon: "language", text: "10+ хэл" }
-    ]
   },
   {
     id: 3,
-    title: "Аюулгүй & Найдвартай",
-    description: "24/7 туслалцаа, аяллын даатгал, найдвартай үйлчилгээ",
+    title: "Аюулгүй Аялал",
+    description: "Найдвартай үйлчилгээ, даатгал",
     imageUrl: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2070&auto=format&fit=crop",
     info: "24/7 туслалцаа",
-    stats: [
-      { icon: "shield-alt", text: "100% даатгал" },
-      { icon: "headset", text: "24/7 тусламж" }
-    ]
   },
 ];
 
@@ -131,27 +119,15 @@ const Card = ({ data }) => {
           resizeMode="cover"
         />
         <LinearGradient
-          colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.9)']}
+          colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.8)']}
           style={styles.gradient}
         >
           <View style={styles.cardContent}>
-            <View style={styles.titleContainer}>
-              <Text style={styles.titleText}>{data.title}</Text>
-              <View style={styles.ratingContainer}>
-                <Icon name="star" size={16} color="#FFD700" />
-                <Text style={styles.ratingText}>4.9</Text>
-              </View>
-            </View>
-            
+            <Text style={styles.titleText}>{data.title}</Text>
             <Text style={styles.descriptionText}>{data.description}</Text>
-            
-            <View style={styles.statsContainer}>
-              {data.stats.map((stat, index) => (
-                <View key={index} style={styles.statItem}>
-                  <Icon name={stat.icon} size={16} color="#fff" />
-                  <Text style={styles.statText}>{stat.text}</Text>
-                </View>
-              ))}
+            <View style={styles.infoContainer}>
+              <Icon name="map-marker-alt" size={16} color="#fff" />
+              <Text style={styles.infoText}>{data.info}</Text>
             </View>
           </View>
         </LinearGradient>
@@ -267,7 +243,7 @@ const OnboardingControls = ({
               exiting={FadeOutLeft.duration(100)}
               style={styles.checkContainer}
             >
-              <Check color={"#006cff"} strokeWidth={4} size={15} />
+              <Check color={"#fff"} strokeWidth={4} size={15} />
             </Animated.View>
           )}
           <Animated.Text style={styles.buttonText}>
@@ -349,7 +325,7 @@ const styles = StyleSheet.create({
     width: DOT_SIZE,
     height: DOT_SIZE,
     borderRadius: DOT_SIZE / 2,
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.43)',
   },
   controlContainer: {
     flexDirection: "row",
@@ -399,12 +375,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   checkContainer: {
-    width: 20,
-    height: 20,
-    backgroundColor: "white",
-    borderRadius: 10,
+    width: 24,
+    height: 24,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
+    marginRight: 15,
   },
   cardContainer: {
     width: SCREEN_WIDTH,
@@ -414,17 +391,17 @@ const styles = StyleSheet.create({
   card: {
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
-    borderRadius: 25,
+    borderRadius: 20,
     overflow: 'hidden',
     backgroundColor: '#fff',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 15,
+      height: 10,
     },
-    shadowOpacity: 0.4,
-    shadowRadius: 25,
-    elevation: 15,
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
   },
   gradient: {
     position: 'absolute',
@@ -433,62 +410,31 @@ const styles = StyleSheet.create({
     bottom: 0,
     height: CARD_HEIGHT,
     justifyContent: 'flex-end',
-    padding: 30,
+    padding: 25,
   },
   cardContent: {
     alignItems: 'flex-start',
   },
-  titleContainer: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
   titleText: {
     fontSize: 28,
-    fontWeight: '800',
+    fontWeight: 'bold',
     color: '#fff',
-    flex: 1,
-    marginRight: 10,
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
-  },
-  ratingText: {
-    color: '#fff',
-    marginLeft: 5,
-    fontSize: 14,
-    fontWeight: '600',
+    marginBottom: 10,
   },
   descriptionText: {
     fontSize: 16,
     color: 'rgba(255,255,255,0.9)',
-    marginBottom: 20,
-    lineHeight: 24,
+    marginBottom: 15,
   },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  statItem: {
+  infoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
   },
-  statText: {
+  infoText: {
     color: '#fff',
     marginLeft: 8,
     fontSize: 14,
@@ -509,14 +455,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 25,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
   },
   skipButtonText: {
     color: '#FF385C',
