@@ -10,7 +10,8 @@ import {
   Image,
   ActivityIndicator,
   SafeAreaView,
-  StatusBar
+  StatusBar,
+  Button
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { createComment } from '../redux/slices/commentSlice';
@@ -43,103 +44,23 @@ const CommentScreen = ({ route, navigation }) => {
 
   const handleSubmit = async () => {
     if (content.trim() === '') return;
-    
-    try {
-      await dispatch(createComment({ content, postId, authorId: 'your-user-id' }));
-      setContent('');
-      navigation.navigate('PostList');
-    } catch (err) {
-      // Алдааг handle хийх
-    }
-  };
-
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaType.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      console.log(result.assets[0].uri);
-    }
+    dispatch(createComment({ content, postId, authorId: 'your-user-id' }));
+    setContent('');
+    navigation.navigate('PostList'); // Амжилттай бол буцна
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-      
-      {/* Header */}
-      <View style={styles.glassHeader}>
-        <View style={styles.headerContent}>
-          <TouchableOpacity 
-            style={styles.backBtn}
-            onPress={() => navigation.goBack()}
-          >
-            <Icon name="arrow-back" size={24} color="#000000" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Сэтгэгдэл бичих</Text>
-        </View>
-      </View>
-
-      {/* Main Content */}
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.contentContainer}
-      >
-        <View style={styles.inputWrapper}>
-          <Image 
-            source={{ uri: userAvatar }} 
-            style={styles.avatar}
-          />
-          <TextInput
-            style={styles.modernInput}
-            placeholder="Та юу бодож байна?"
-            placeholderTextColor="#8E8E93"
-            value={content}
-            onChangeText={setContent}
-            multiline
-            maxLength={1000}
-          />
-        </View>
-
-        {/* Character Count */}
-        <Text style={styles.charCount}>
-          {content.length}/1000
-        </Text>
-
-        {/* Action Buttons */}
-        <View style={styles.actionButtons}>
-          <TouchableOpacity 
-            style={styles.attachButton}
-            onPress={pickImage}
-          >
-            <Icon name="attach-file" size={24} color="#007AFF" />
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[styles.submitButton, !content.trim() && styles.submitButtonDisabled]}
-            onPress={handleSubmit}
-            disabled={loading || !content.trim()}
-          >
-            {loading ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
-            ) : (
-              <Text style={styles.submitButtonText}>Илгээх</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {/* Error Message */}
-        {error && (
-          <View style={styles.errorContainer}>
-            <Icon name="error-outline" size={20} color="#FF3B30" />
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        )}
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+    <View style={styles.container}>
+      <TextInput
+        style={styles.input}
+        placeholder="Таны сэтгэгдэл"
+        value={content}
+        onChangeText={setContent}
+      />
+      <Button title="Сэтгэгдэл нэмэх" onPress={handleSubmit} disabled={loading} color="#6200ea" />
+      {error && <Text style={styles.error}>Алдаа: {error}</Text>}
+      <Button title="Постын жагсаалт руу буцах" onPress={() => navigation.navigate('PostList')} />
+    </View>
   );
 };
 
