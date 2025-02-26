@@ -7,6 +7,7 @@ import postReducer from './slices/postSlice';
 import commentReducer from './slices/commentSlice';
 import likeReducer from './slices/likeSlice';
 import profileReducer from './slices/profileSlice';
+import searchReducer from './slices/searchSlice';
 
 export const store = configureStore({
   reducer: {
@@ -17,7 +18,8 @@ export const store = configureStore({
     post: postReducer,
     comment: commentReducer,
     likes: likeReducer,
-    profile: profileReducer
+    profile: profileReducer,
+    search: searchReducer
   },
 });
 

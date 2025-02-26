@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { loginUser, registerUser } from '../../utils/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const login = createAsyncThunk('auth/login', async (credentials, { rejectWithValue }) => {
   try {
@@ -19,6 +20,24 @@ export const register = createAsyncThunk('auth/register', async (userData, { rej
   }
 });
 
+export const logout = createAsyncThunk(
+  'auth/logout',
+  async (_, { dispatch }) => {
+    try {
+      // Remove token from storage
+      await AsyncStorage.removeItem('token');
+      
+      // Clear all states
+      dispatch({ type: 'RESET_APP_STATE' });
+      
+      return true;
+    } catch (error) {
+      console.error('Logout error:', error);
+      throw error;
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
@@ -28,9 +47,8 @@ const authSlice = createSlice({
     error: null,
   },
   reducers: {
-    logout: (state) => {
-      state.user = null;
-      state.token = null;
+    clearAuthError: (state) => {
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
@@ -54,9 +72,22 @@ const authSlice = createSlice({
       .addCase(register.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(logout.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(logout.fulfilled, (state) => {
+        state.user = null;
+        state.token = null;
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(logout.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
       });
   },
 });
 
-export const { logout } = authSlice.actions;
+export const { logout: authSliceLogout } = authSlice.actions;
 export default authSlice.reducer;

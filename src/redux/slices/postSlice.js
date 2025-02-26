@@ -1,37 +1,26 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
 import { createPost as apiCreatePost, fetchPosts as apiFetchPosts } from '../../utils/api'; // api.js-ээс импортлож байна
 
 export const fetchPosts = createAsyncThunk('post/fetchPosts', async () => {
-  const response = await axios.get('http://192.168.88.230:5000/api/posts');
+  const response = await apiFetchPosts();
   return response.data;
 });
 
 export const createPost = createAsyncThunk(
   'post/createPost',
-  async (postData, { getState }) => {
-    const token = getState().auth.token;
-    const formData = new FormData();
-    formData.append('description', postData.description);
-    formData.append('authorId', postData.authorId);
-    if (postData.image) {
-      formData.append('image', {
-        uri: postData.image,
-        type: 'image/jpeg',
-        name: 'post-image.jpg',
-      });
+  async (postData, { dispatch }) => {
+    try {
+      console.log('Creating post with data:', postData);
+      const response = await apiCreatePost(postData);
+      console.log('Post creation response:', response.data);
+      
+      // Шинэ постуудыг авах
+      await dispatch(fetchPosts());
+      return response.data;
+    } catch (error) {
+      console.error('Error in createPost:', error);
+      throw error;
     }
-    const response = await axios.post(
-      'http://192.168.88.230:5000/api/posts',
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`,
-        },
-      }
-    );
-    return response.data;
   }
 );
 

@@ -9,6 +9,7 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Button,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import * as ImagePicker from 'expo-image-picker';
@@ -32,28 +33,17 @@ const CreatePostScreen = ({ navigation }) => {
 
   const categories = ['Байгаль', 'Хот', 'Түүх', 'Соёл', 'Адал явдал'];
 
-  const pickImages = async () => {
-    try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Анхааруулга', 'Зургийн сан руу хандах зөвшөөрөл өгнө үү.');
-        return;
-      }
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
 
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsMultipleSelection: true,
-        quality: 0.8,
-        aspect: [4, 3],
-      });
-
-      if (!result.canceled) {
-        const newImages = result.assets.map((asset) => asset.uri);
-        setImages((prev) => [...prev, ...newImages].slice(0, 5));
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-    } catch (error) {
-      Alert.alert('Алдаа', 'Зураг сонгоход алдаа гарлаа.');
+    if (!result.canceled && result.assets[0].uri) {
+      console.log('Selected image:', result.assets[0].uri);
+      setImages([result.assets[0].uri]); // Single image for now
     }
   };
 
@@ -93,7 +83,8 @@ const CreatePostScreen = ({ navigation }) => {
       setCategory('');
       navigation.navigate('PostList');
     } catch (error) {
-      Alert.alert('Алдаа', error.message || 'Пост оруулахад алдаа гарлаа.');
+      console.error('Error creating post:', error);
+      Alert.alert('Error', error.message || 'Пост оруулахад алдаа гарлаа.');
     }
   };
 
@@ -177,15 +168,17 @@ const CreatePostScreen = ({ navigation }) => {
             </View>
           ))}
           {images.length < 5 && (
-            <TouchableOpacity style={styles.addImageButton} onPress={pickImages}>
+            <TouchableOpacity style={styles.addImageButton} onPress={pickImage}>
               <LinearGradient colors={['#5C6BC0', '#3949AB']} style={styles.addImageGradient}>
                 <Ionicons name="camera" size={24} color="#FFF" />
-                <Text style={styles.addImageText}>Зураг нэмэх</Text>
+                <Text style={styles.addImageText}>Зураг сонгох</Text>
               </LinearGradient>
             </TouchableOpacity>
           )}
         </View>
       </ScrollView>
+
+      {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 };

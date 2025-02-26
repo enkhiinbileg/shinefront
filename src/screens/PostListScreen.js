@@ -10,7 +10,8 @@ import {
   RefreshControl,
   StatusBar,
   Animated,
-  ScrollView
+  ScrollView,
+  useColorScheme
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchPosts } from '../redux/slices/postSlice';
@@ -22,6 +23,9 @@ import { SharedElement } from 'react-navigation-shared-element';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { Image as ExpoImage } from 'expo-image';
+import { useFocusEffect } from '@react-navigation/native';
+import { MotiView } from 'moti';
+import { useTheme } from '../context/ThemeContext';
 
 const PostListScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -31,6 +35,27 @@ const PostListScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [selectedFilter, setSelectedFilter] = useState(0);
+  const [weather, setWeather] = useState({ temp: '23°', condition: '☀️' });
+  const colorScheme = useColorScheme();
+  const { theme, toggleTheme } = useTheme();
+
+  // Theme colors - илүү дэлгэрэнгүй өнгөний тохиргоо
+  const colors = {
+    background: theme === 'dark' ? '#121212' : '#F8F9FA',
+    surface: theme === 'dark' ? '#1E1E1E' : '#FFFFFF',
+    text: theme === 'dark' ? '#FFFFFF' : '#1A1A1A',
+    textSecondary: theme === 'dark' ? '#AAAAAA' : '#666666',
+    card: theme === 'dark' ? '#2A2A2A' : '#FFFFFF',
+    border: theme === 'dark' ? '#333333' : '#E9ECEF',
+    primary: theme === 'dark' ? '#7986CB' : '#5C6BC0',
+    accent: theme === 'dark' ? '#B39DDB' : '#3949AB',
+    navBar: theme === 'dark' ? '#1E1E1E' : '#FFFFFF',
+    navBarBorder: theme === 'dark' ? '#333333' : '#EFEFEF',
+    weatherGradient: theme === 'dark' 
+      ? ['#1A237E', '#303F9F']
+      : ['#4FC3F7', '#2196F3'],
+  };
 
   // Анимэйшн утгуудыг useRef ашиглан хадгалах
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
@@ -75,47 +100,127 @@ const PostListScreen = ({ navigation }) => {
     extrapolate: 'clamp',
   });
 
+  const renderWeatherCard = () => (
+    <MotiView
+      from={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ type: 'timing', duration: 500 }}
+      style={[styles.weatherCard, { backgroundColor: colors.card }]}
+    >
+      <BlurView 
+        intensity={theme === 'dark' ? 40 : 60} 
+        tint={theme === 'dark' ? 'dark' : 'light'} 
+        style={styles.weatherBlur}
+      >
+        <View style={styles.weatherContent}>
+          <View>
+            <Text style={[styles.weatherTemp, { color: colors.text }]}>{weather.temp}</Text>
+            <Text style={[styles.weatherLocation, { color: colors.textSecondary }]}>
+              Улаанбаатар
+            </Text>
+          </View>
+          <Text style={styles.weatherIcon}>{weather.condition}</Text>
+        </View>
+      </BlurView>
+    </MotiView>
+  );
+
+  const renderThemeToggle = () => (
+    <TouchableOpacity
+      style={[
+        styles.themeToggle,
+        { backgroundColor: colors.surface }
+      ]}
+      onPress={() => {
+        Haptics.selectionAsync();
+        toggleTheme();
+      }}
+    >
+      <Ionicons
+        name={theme === 'dark' ? 'sunny-outline' : 'moon-outline'}
+        size={24}
+        color={colors.text}
+      />
+    </TouchableOpacity>
+  );
+
   const renderHeader = () => (
     <Animated.View 
-      style={[
-        styles.header, 
-        { 
-          opacity: headerOpacity, 
-          paddingTop: insets.top,
-          transform: [{ translateY: slideAnim }]
-        }
-      ]}
+      style={[styles.header, { opacity: headerOpacity, paddingTop: insets.top }]}
     >
-      <BlurView intensity={80} tint="light" style={styles.headerBlur}>
+      <BlurView 
+        intensity={theme === 'dark' ? 40 : 90} 
+        tint={theme === 'dark' ? 'dark' : 'light'} 
+        style={[styles.headerBlur, { borderBottomColor: colors.border }]}
+      >
         <View style={styles.headerContent}>
-          <View>
-            <Animated.View
-              style={{
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }]
-              }}
-            >
-              <Text style={styles.headerTitle}>Аяллууд</Text>
-              <Text style={styles.headerSubtitle}>Шинэ газрууд нээ</Text>
+          <View style={styles.headerLeft}>
+            <Animated.View style={{ opacity: fadeAnim }}>
+              <Text style={[styles.welcomeText, { color: colors.textSecondary }]}>
+                Сайн байна уу! 👋
+              </Text>
+              <Text style={[styles.headerTitle, { color: colors.text }]}>
+                Аяллын Бүртгэл
+              </Text>
             </Animated.View>
           </View>
-          <TouchableOpacity 
-            style={styles.profileButton}
-            onPress={() => navigation.navigate('UserProfile')}
-          >
-            <ExpoImage
-              source={{ uri: 'https://via.placeholder.com/40' }}
-              style={styles.profileImage}
-              contentFit="cover"
-              transition={200}
-            />
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            {renderThemeToggle()}
+            <TouchableOpacity 
+              style={[
+                styles.notificationButton,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border
+                }
+              ]}
+              onPress={() => {
+                Haptics.selectionAsync();
+                navigation.navigate('Notifications');
+              }}
+            >
+              <Ionicons 
+                name="notifications-outline" 
+                size={24} 
+                color={colors.text} 
+              />
+              <View style={styles.notificationBadge} />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[
+                styles.profileButton,
+                { borderColor: colors.primary }
+              ]}
+              onPress={() => navigation.navigate('UserProfile')}
+            >
+              <ExpoImage
+                source={{ uri: 'https://images.pexels.com/photos/1045614/pexels-photo-1045614.jpeg?auto=compress&cs=tinysrgb&w=600&lazy=load' }}
+                style={styles.profileImage}
+                contentFit="cover"
+                transition={300}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
+        {renderWeatherCard()}
+
         <View style={styles.searchContainer}>
-          <TouchableOpacity style={styles.searchBar}>
-            <Ionicons name="search" size={20} color="#666" />
-            <Text style={styles.searchPlaceholder}>Аяллын газар хайх...</Text>
+          <TouchableOpacity 
+            style={[styles.searchBar, { 
+              backgroundColor: colors.card,
+              borderColor: colors.border 
+            }]}
+            onPress={() => navigation.navigate('Search')}
+          >
+            <Ionicons name="search" size={20} color={colors.textSecondary} />
+            <Text style={[styles.searchPlaceholder, { color: colors.textSecondary }]}>
+              Хаашаа аялах вэ?
+            </Text>
+            <View style={styles.searchRight}>
+              <View style={[styles.searchDivider, { backgroundColor: colors.border }]} />
+              <Ionicons name="options-outline" size={20} color={colors.textSecondary} />
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -125,26 +230,42 @@ const PostListScreen = ({ navigation }) => {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.filterScroll}
           >
-            {['Бүгд', 'Байгаль', 'Хот', 'Түүх', 'Соёл', 'Адал явдал'].map((filter, index) => (
-              <Animated.View
+            {[
+              { icon: '🌎', label: 'Бүгд' },
+              { icon: '🏔️', label: 'Байгаль' },
+              { icon: '🌆', label: 'Хот' },
+              { icon: '🏛️', label: 'Түүх' },
+              { icon: '🎭', label: 'Соёл' },
+              { icon: '🏃', label: 'Адал явдал' }
+            ].map((filter, index) => (
+              <MotiView
                 key={index}
-                style={{
-                  opacity: new Animated.Value(1),
-                  transform: [{ scale: new Animated.Value(1) }]
-                }}
+                from={{ opacity: 0, translateY: 20 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{ delay: index * 100 }}
               >
                 <TouchableOpacity 
                   style={[
                     styles.filterButton,
-                    index === 0 && styles.filterButtonActive
+                    { 
+                      backgroundColor: selectedFilter === index ? colors.primary : colors.card,
+                      borderColor: selectedFilter === index ? colors.accent : colors.border 
+                    }
                   ]}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setSelectedFilter(index);
+                  }}
                 >
+                  <Text style={styles.filterIcon}>{filter.icon}</Text>
                   <Text style={[
                     styles.filterText,
-                    index === 0 && styles.filterTextActive
-                  ]}>{filter}</Text>
+                    { 
+                      color: selectedFilter === index ? '#FFF' : colors.textSecondary 
+                    }
+                  ]}>{filter.label}</Text>
                 </TouchableOpacity>
-              </Animated.View>
+              </MotiView>
             ))}
           </ScrollView>
         </View>
@@ -161,7 +282,7 @@ const PostListScreen = ({ navigation }) => {
       }}
     >
       <LinearGradient
-        colors={['#5C6BC0', '#3949AB']}
+        colors={colors.weatherGradient}
         style={styles.createPostGradient}
       >
         <MaterialIcons name="add" size={28} color="#FFF" />
@@ -170,7 +291,18 @@ const PostListScreen = ({ navigation }) => {
   );
 
   const renderNavBar = () => (
-    <BlurView intensity={80} style={[styles.navBar, { paddingBottom: insets.bottom }]}>
+    <BlurView 
+      intensity={theme === 'dark' ? 40 : 80} 
+      tint={theme === 'dark' ? 'dark' : 'light'}
+      style={[
+        styles.navBar, 
+        { 
+          paddingBottom: insets.bottom,
+          borderTopColor: colors.navBarBorder,
+          backgroundColor: colors.navBar 
+        }
+      ]}
+    >
       {[
         { icon: 'compass', route: 'PostList', label: 'Нээх' },
         { icon: 'map', route: 'Map', label: 'Газрын зураг' },
@@ -185,15 +317,19 @@ const PostListScreen = ({ navigation }) => {
             navigation.navigate(item.route);
           }}
         >
-          <Animated.View>
+          <Animated.View style={styles.navButtonContent}>
             <Ionicons 
               name={item.icon} 
               size={24} 
-              color={item.route === 'PostList' ? '#5C6BC0' : '#666'} 
+              color={item.route === 'PostList' ? colors.primary : colors.textSecondary} 
             />
             <Text style={[
               styles.navLabel,
-              item.route === 'PostList' && styles.navLabelActive
+              { color: colors.textSecondary },
+              item.route === 'PostList' && [
+                styles.navLabelActive,
+                { color: colors.primary }
+              ]
             ]}>
               {item.label}
             </Text>
@@ -204,15 +340,19 @@ const PostListScreen = ({ navigation }) => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar 
+        barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} 
+        backgroundColor={colors.background}
+      />
       {renderHeader()}
       
       <Animated.FlatList
         data={posts}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item, index) => `post-${item.id}-${index}`}
         renderItem={({ item, index }) => (
           <Animated.View
+            key={`post-view-${item.id}-${index}`}
             style={{
               opacity: fadeAnim,
               transform: [
@@ -220,8 +360,9 @@ const PostListScreen = ({ navigation }) => {
               ]
             }}
           >
-            <SharedElement id={`post.${item.id}`}>
+            <SharedElement id={`post-${item.id}-${index}`}>
               <PostCard 
+                key={`post-card-${item.id}-${index}`}
                 post={item} 
                 onComment={() => navigation.navigate('Comment', { postId: item.id })}
                 onPress={() => navigation.navigate('PostDetail', { post: item })} 
@@ -240,7 +381,7 @@ const PostListScreen = ({ navigation }) => {
         }
         contentContainerStyle={[
           styles.listContent,
-          { paddingBottom: insets.bottom + 60 }
+          { paddingBottom: insets.bottom + 90 }
         ]}
         showsVerticalScrollIndicator={false}
         onScroll={Animated.event(
@@ -254,8 +395,15 @@ const PostListScreen = ({ navigation }) => {
 
       {renderCreatePostButton()}
       {loading && !refreshing && (
-        <BlurView intensity={95} style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#5C6BC0" />
+        <BlurView 
+          intensity={theme === 'dark' ? 40 : 95} 
+          tint={theme === 'dark' ? 'dark' : 'light'}
+          style={[
+            styles.loadingContainer,
+            { backgroundColor: theme === 'dark' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.8)' }
+          ]}
+        >
+          <ActivityIndicator size="large" color={colors.primary} />
         </BlurView>
       )}
       
@@ -287,15 +435,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
   },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1A1A1A',
-  },
-  headerSubtitle: {
+  welcomeText: {
     fontSize: 14,
     color: '#666',
-    marginTop: 2,
+    marginBottom: 4,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    letterSpacing: 0.5,
   },
   createPostGradient: {
     width: 56,
@@ -312,25 +461,39 @@ const styles = StyleSheet.create({
     paddingRight: 16,
   },
   filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#F0F0F0',
+    backgroundColor: '#F8F9FA',
     marginRight: 8,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: '#E9ECEF',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    transform: [{ scale: 1 }],
   },
   filterButtonActive: {
     backgroundColor: '#5C6BC0',
     borderColor: '#3949AB',
+    transform: [{ scale: 1.05 }],
+  },
+  filterIcon: {
+    fontSize: 16,
+    marginRight: 6,
   },
   filterText: {
     fontSize: 14,
-    color: '#666',
+    color: '#495057',
+    fontWeight: '500',
   },
   filterTextActive: {
     color: '#FFF',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   listContent: {
     paddingTop: 60,
@@ -357,6 +520,12 @@ const styles = StyleSheet.create({
   },
   navButton: {
     padding: 10,
+    flex: 1,
+    alignItems: 'center',
+  },
+  navButtonContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   navLabel: {
     fontSize: 12,
@@ -387,15 +556,23 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0F0F0',
-    borderRadius: 12,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 8,
+    paddingVertical: 12,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   searchPlaceholder: {
-    color: '#666',
+    color: '#ADB5BD',
     fontSize: 15,
+    fontWeight: '500',
   },
   createPostButton: {
     position: 'absolute',
@@ -404,12 +581,86 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
+    elevation: 8,
+    shadowColor: '#5C6BC0',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
     zIndex: 100,
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  notificationButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F8F9FA',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FF5252',
+  },
+  weatherCard: {
+    marginVertical: 12,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  weatherBlur: {
+    padding: 16,
+  },
+  weatherContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  weatherTemp: {
+    fontSize: 32,
+    fontWeight: '600',
+    color: '#1A1A1A',
+  },
+  weatherLocation: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+  },
+  weatherIcon: {
+    fontSize: 36,
+  },
+  searchRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 'auto',
+  },
+  searchDivider: {
+    width: 1,
+    height: 20,
+    backgroundColor: '#E9ECEF',
+    marginHorizontal: 12,
+  },
+  themeToggle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
   },
 });
 

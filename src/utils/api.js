@@ -96,11 +96,13 @@ export const registerUser = async (userData) => {
 };
 
 export const fetchUserProfile = async (userId) => {
-  const token = await getToken();
-  console.log('Гараар шалгаж байна, токен:', token);
-  return api.get(`/users/${userId}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  try {
+    const response = await api.get(`/users/${userId}`);
+    console.log('fetchUserProfile response.data:', response.data);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.error || 'Профайл авахад алдаа гарлаа');
+  }
 };
 
 export const fetchProducts = async () => {
@@ -119,11 +121,10 @@ export const fetchPosts = () => api.get('/posts');
 
 export const createPost = (postData) => {
   const formData = new FormData();
-  formData.append('description', postData.description || ''); // CreatePostScreen-тай тааруулав
+  formData.append('description', postData.description || '');
   formData.append('location', postData.location || '');
   formData.append('category', postData.category || '');
 
-  // Олон зураг нэмэх
   if (postData.images && postData.images.length > 0) {
     postData.images.forEach((imageUri, index) => {
       formData.append('images', {
@@ -134,10 +135,11 @@ export const createPost = (postData) => {
     });
   }
 
-  console.log('Пост илгээж байна...', formData);
+  console.log('Sending post data:', formData);
+
   return api.post('/posts', formData, {
     headers: {
-      'Content-Type': 'multipart/form-data', // Зөв header тохируулах
+      'Content-Type': 'multipart/form-data',
     },
   });
 };
